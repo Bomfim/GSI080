@@ -25,7 +25,7 @@ The **Kthread** will run in 4 different ways:
 3. You should see that the compilation proccess will generates some files, now you need to insert the compiled module.
 4. `insmod ./kernel_module.ko` will insert your module to kernel's code.
 5. Alright, if you've done everything right so far with `dmesg` command you should see the kernel log and the messages from the freshly added module.
-6. To remove the loaded kernel module run rmmod kernel_module.
+6. To remove the loaded kernel module run `rmmod kernel_module`.
 
 ###### Please read the code and if you have any doubts don't hesitate to contact me <mariobomfim@ufu.br>
 
