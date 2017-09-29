@@ -1,6 +1,6 @@
 # Kernel Modules
 
-The `kernel_module.c` creates 4 different handle mechanisms for bottom halves of a interrupt.
+The `kernel_module.c` creates 4 different handle mechanisms for bottom halves of a interrupt treatment.
 
 They are:
 * Tasklets
