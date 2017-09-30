@@ -14,9 +14,9 @@ The **tasklet** will run immediately, the **workqueues** will run the first one 
 The **Ktimer**, as the name already says, will run also scheduled (the same 5 secs).
 The **Kthread** will run in 4 different ways:
 1. Immediately without a specified CPU.
-1. Immediately with a specified CPU.
-1. Immediately without a  an CPU.
-1. Scheduled without a  an CPU (5 secs too).
+2. Immediately with a specified CPU.
+3. Immediately without a specified CPU.
+4. Scheduled without a  an CPU (5 secs too).
 
 ## Compile proccess
 1. The `Makefile` will do all the work, you just need to have it installed.
