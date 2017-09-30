@@ -20,7 +20,7 @@ void handler(void)
 //////////////////////////////////////////////////////////
 static struct task_struct *kthread2;
 
-int threadfn(void *unused)
+int threadfn2(void *unused)
 {
 	unsigned long j0,j1;
 	int delay = 5*HZ;
@@ -40,13 +40,13 @@ int threadfn(void *unused)
 //////////////////////////////////////////////////////////
 
 static struct task_struct *kthread1;
-/*
+
 int threadfn(void *unused)
 {
 	handler();
 	return 0;
 }
-*/
+
 //////////////////////////////////////////////////////////
 
 static struct timer_list exp_timer;
@@ -95,17 +95,17 @@ static void tasklet_handler(unsigned long flag)
 
 static int __init kernel_module_init(void)
 {
-/*
+
 	printk("module init start. \n");
+	
 	tasklet_schedule(&tasklet);
 
 	queue = create_workqueue("WorkQueue");
 	queue_work(queue, &work);
 
-*/	
 	queue = create_workqueue("WorkQueue");
 	schedule_delayed_work(&scheduled_work, 5 * HZ);
-/*
+
 	setup_timer(&exp_timer, ktimer_handler, 0);
 	mod_timer(&exp_timer, jiffies + msecs_to_jiffies(5000));
 	
@@ -119,44 +119,45 @@ static int __init kernel_module_init(void)
 
 
 	
-	kthread2 = kthread_create(threadfn, NULL,"Kthread2");
+	kthread2 = kthread_create(threadfn2, NULL,"Kthread2");
 	
-if(kthread2)
+
+	if(kthread2)
 		wake_up_process(kthread2);
 
 
-*/
+
 	return 0;
 }
 
 static void __exit kernel_module_exit(void)
 {
-/*
+
 	tasklet_kill(&tasklet);
 
 	
 	flush_work(&work);
 	destroy_workqueue(queue);
 
-*/
+
 	cancel_delayed_work(&scheduled_work);
 	flush_scheduled_work();
 	destroy_workqueue(queue);
-/*
+
 	del_timer(&exp_timer);
 		
 	if (kthread1)
 	{
        kthread_stop(kthread1);
-       printk(KERN_INFO "Thread stopped");
+       printk(KERN_INFO "Thread 1 stopped");
    	}
 	
 	if (kthread2)
 	{
        kthread_stop(kthread2);
-       printk(KERN_INFO "Thread stopped");
+       printk(KERN_INFO "Thread 2 stopped");
    	}
-*/
+
 	printk("module init end.\n");
 }
 
