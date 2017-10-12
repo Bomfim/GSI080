@@ -18,6 +18,7 @@ void handler(void)
 }
 
 //////////////////////////////////////////////////////////
+
 static struct task_struct *kthread2;
 
 int threadfn2(void *unused)
