@@ -1,7 +1,6 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 typedef struct header_t {
 	size_t size;
@@ -9,11 +8,7 @@ typedef struct header_t {
 	struct header_t *next;
 } Header;
 
-
 Header *head, *tail;
-
-pthread_mutex_t global_malloc_lock;
-
 
 Header *get_free_block(size_t size)
 {
@@ -34,12 +29,10 @@ void *malloc(size_t size)
 
 	if (!size)
 		return NULL;
-	pthread_mutex_lock(&global_malloc_lock);
 	header = get_free_block(size);
 
 	if (header) {
 		header->is_free = 0;
-		pthread_mutex_unlock(&global_malloc_lock);
 		return (void*)(header + 1);
 	}
 
@@ -47,7 +40,6 @@ void *malloc(size_t size)
 	block = sbrk(total_size);
 
 	if (block == (void*) -1) {
-		pthread_mutex_unlock(&global_malloc_lock);
 		return NULL;
 	}
 
@@ -55,15 +47,14 @@ void *malloc(size_t size)
 	header->size = size;
 	header->is_free = 0;
 	header->next = NULL;
-	
-	printf("%p\n", header);
 
+	fprintf(stderr, "%p\t%d\t%d\t%p\n",header, header->size, header->is_free, header->next);
+	
 	if (!head)
 		head = header;
 	if (tail)
 		tail->next = header;
 	tail = header;
-	pthread_mutex_unlock(&global_malloc_lock);
 
 	return (void*)(header + 1);
 }
@@ -77,7 +68,7 @@ void free(void *block)
 
 	if (!block)
 		return;
-	pthread_mutex_lock(&global_malloc_lock);
+	
 	header = (Header*)block - 1;
 
 	programbreak = sbrk(0);
@@ -95,9 +86,7 @@ void free(void *block)
 			}
 		}
 		sbrk(0 - sizeof(Header) - header->size);
-		pthread_mutex_unlock(&global_malloc_lock);
 		return;
 	}
 	header->is_free = 1;
-	pthread_mutex_unlock(&global_malloc_lock);
 }
