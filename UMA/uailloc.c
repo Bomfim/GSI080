@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <stdio.h>
 
+//Struct para representar
 typedef struct header_t {
 	size_t size;
 	unsigned is_free;
