@@ -7,7 +7,7 @@ int main()
 	{
 		ptr = (int*) malloc(i);
 		printf("%p\n",&ptr);
-		//free(ptr);
+		free(ptr);
 	}
 	return 0;
 }
