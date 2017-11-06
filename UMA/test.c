@@ -3,6 +3,7 @@
 int main()
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	int *ptr;
 	for (int i = 0; i < (2 ^ 8); i++)
 	{
@@ -11,6 +12,8 @@ int main()
 		free(ptr);
 	}
 =======
+=======
+>>>>>>> b35532aed529c3717ea935ae0f2b6582191e68cc
 	char *ptr,*ptr2,*ptr3;
 	ptr = (char*) malloc(81920);
 	ptr2 = (char*) malloc(40960);
@@ -24,6 +27,9 @@ int main()
 	free(ptr3);
 	fprintf(stderr, "free: %p\n", ptr3);
 	
+<<<<<<< HEAD
+>>>>>>> b35532aed529c3717ea935ae0f2b6582191e68cc
+=======
 >>>>>>> b35532aed529c3717ea935ae0f2b6582191e68cc
 	return 0;
 }
