@@ -1,4 +1,3 @@
-#include <ucontext.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <string.h>
@@ -10,22 +9,12 @@
 #include <semaphore.h>
 #include "fiber.h"
 
-#define NUMCONTEXTS 8
-#define STACKSIZE 64 * 1024
-#define INTERVAL 100
-
 sigset_t set;              /* process wide signal mask */
 ucontext_t signal_context; /* the interrupt context */
 void *signal_stack;        /* global interrupt stack */
-ucontext_t contexts[NUMCONTEXTS];
-int curcontext = 0;
-ucontext_t *cur_context; /* a pointer to the current_context */
-int vet[8][1];
-sem_t semaphore;
-
-void *func()
-{
-}
+fiber_t fiberList[MAX_FIBERS];
+ucontext_t *cur_context;  /* a pointer to the current_context */
+int numFibers = 0; /* The number of active fibers */
 
 /* helper function to create a context.
 initialize the context from the current context, setup the new
@@ -35,7 +24,7 @@ void mkcontext(ucontext_t *uc, void *function)
 {
     void *stack;
     getcontext(uc);
-    stack = malloc(STACKSIZE);
+    stack = malloc(FIBER_STACK);
     if (stack == NULL)
     {
         perror("malloc");
@@ -43,9 +32,10 @@ void mkcontext(ucontext_t *uc, void *function)
     }
 
     /* we need to initialize the ucontext structure, give it a stack,
-	flags, and a sigmask */
+    flags, and a sigmask */
+    uc->uc_link = cur_context;
     uc->uc_stack.ss_sp = stack;
-    uc->uc_stack.ss_size = STACKSIZE;
+    uc->uc_stack.ss_size = FIBER_STACK;
     uc->uc_stack.ss_flags = 0;
     if (sigemptyset(&uc->uc_sigmask) < 0)
     {
@@ -55,11 +45,15 @@ void mkcontext(ucontext_t *uc, void *function)
 
     /* setup the function we're going to, and n-1 arguments. */
     makecontext(uc, function, 1);
+    fiberList[numFibers].active = 1;
+    numFibers++;
     printf("context is %p\n", uc);
 }
 
 void scheduler() //signal handler for SIGPROF
 {
+    printf("Scheduler! context:%p\n", cur_context);
+    swapcontext(cur_context, &fiberList[0].context);
 }
 
 /*
@@ -73,7 +67,7 @@ void timer_interrupt(int j, siginfo_t *si, void *old_context)
     /* Create new scheduler context */
     getcontext(&signal_context);
     signal_context.uc_stack.ss_sp = signal_stack;
-    signal_context.uc_stack.ss_size = STACKSIZE;
+    signal_context.uc_stack.ss_size = FIBER_STACK;
     signal_context.uc_stack.ss_flags = 0;
     sigemptyset(&signal_context.uc_sigmask);
     makecontext(&signal_context, scheduler, 1);
@@ -99,24 +93,19 @@ void setup_signals(void)
 
 void initialize()
 {
-    int i;
     struct itimerval it;
     fprintf(stderr, "Process Id: %d\n", (int)getpid());
     /* allocate the global signal/interrupt stack */
-    signal_stack = malloc(STACKSIZE);
+    signal_stack = malloc(FIBER_STACK);
     if (signal_stack == NULL)
     {
         perror("malloc");
         exit(1);
     }
 
-    memset(vet, 0, 8 * 1 * sizeof(int));
-
-    /* make all our contexts */
-    mkcontext(&contexts[0], func);
-    for (i = 1; i < NUMCONTEXTS; i++)
+    for (int i = 0; i < MAX_FIBERS; ++i)
     {
-        mkcontext(&contexts[i], func);
+        fiberList[i].active = 0;
     }
 
     /* initialize the signal handlers */
@@ -128,19 +117,27 @@ void initialize()
     it.it_value = it.it_interval;
     if (setitimer(ITIMER_REAL, &it, NULL))
         perror("setitimer");
-
-    /* force a swap to the first context */
-    cur_context = &contexts[0];
-    setcontext(&contexts[0]);
 }
 
 int fiber_create(fiber_t *fiber, void *(*start_routine)(void *), void *arg)
 {
-    initialize();
+
+    if (numFibers == MAX_FIBERS)
+        return -1;
+
+    if (numFibers == 0)
+        initialize();
+
+    mkcontext(&fiberList[numFibers].context, start_routine);
+    cur_context = &fiberList[numFibers].context;
+    setcontext(cur_context);
+
+    return 0;
 }
 
 int fiber_join(fiber_t fiber, void **retval)
 {
+    return 0;
 }
 
 void fiber_exit(void *retval)
