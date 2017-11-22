@@ -4,7 +4,11 @@
 
 void *function()
 {
-    printf("AEHOOOOOOOOOOOO!\n");
+    for (;;)
+    {
+        printf("AEHOOOOOOOOOOOO!\n");
+        sleep(1);
+    }
 }
 
 void *fibonacci()
@@ -33,13 +37,11 @@ void *squares()
 }
 int main(void)
 {
-    fiber_t fiber[2];
+    fiber_t fiber[3];
 
     fiber_create(&fiber[0], function, NULL);
     fiber_create(&fiber[1], fibonacci, NULL);
-    // fiber_create(&fiber, squares, NULL);
-
-    sleep(2);
+    fiber_create(&fiber[2], squares, NULL);
 
     return 0;
 }

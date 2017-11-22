@@ -13,8 +13,9 @@ sigset_t set;              /* process wide signal mask */
 ucontext_t signal_context; /* the interrupt context */
 void *signal_stack;        /* global interrupt stack */
 fiber_t fiberList[MAX_FIBERS];
-ucontext_t *cur_context;  /* a pointer to the current_context */
-int numFibers = 0; /* The number of active fibers */
+ucontext_t cur_context, mainContext; /* a pointer to the current_context */
+
+static int numFibers = 0;
 
 /* helper function to create a context.
 initialize the context from the current context, setup the new
@@ -33,7 +34,7 @@ void mkcontext(ucontext_t *uc, void *function)
 
     /* we need to initialize the ucontext structure, give it a stack,
     flags, and a sigmask */
-    uc->uc_link = cur_context;
+    uc->uc_link = &cur_context;
     uc->uc_stack.ss_sp = stack;
     uc->uc_stack.ss_size = FIBER_STACK;
     uc->uc_stack.ss_flags = 0;
@@ -44,16 +45,22 @@ void mkcontext(ucontext_t *uc, void *function)
     }
 
     /* setup the function we're going to, and n-1 arguments. */
-    makecontext(uc, function, 1);
+    makecontext(uc, function, 0);
     fiberList[numFibers].active = 1;
-    numFibers++;
     printf("context is %p\n", uc);
 }
 
 void scheduler() //signal handler for SIGPROF
 {
-    printf("Scheduler! context:%p\n", cur_context);
-    swapcontext(cur_context, &fiberList[0].context);
+    while (fiberList[numFibers].active == 1)
+    {
+        printf("Scheduler! - cur_context:%p\n", cur_context);
+        if (numFibers == 7)
+            setcontext(&mainContext);
+        swapcontext(&cur_context, &fiberList[numFibers].context);
+        // fiberList[i].active = 0;
+        numFibers--;
+    }
 }
 
 /*
@@ -70,10 +77,11 @@ void timer_interrupt(int j, siginfo_t *si, void *old_context)
     signal_context.uc_stack.ss_size = FIBER_STACK;
     signal_context.uc_stack.ss_flags = 0;
     sigemptyset(&signal_context.uc_sigmask);
-    makecontext(&signal_context, scheduler, 1);
+    makecontext(&signal_context, scheduler, 0);
 
     /* save running thread, jump to scheduler */
-    swapcontext(cur_context, &signal_context);
+    if (&cur_context)
+        swapcontext(&cur_context, &signal_context);
 }
 
 /* Set up SIGALRM signal handler */
@@ -117,6 +125,8 @@ void initialize()
     it.it_value = it.it_interval;
     if (setitimer(ITIMER_REAL, &it, NULL))
         perror("setitimer");
+
+    getcontext(&mainContext);
 }
 
 int fiber_create(fiber_t *fiber, void *(*start_routine)(void *), void *arg)
@@ -129,8 +139,8 @@ int fiber_create(fiber_t *fiber, void *(*start_routine)(void *), void *arg)
         initialize();
 
     mkcontext(&fiberList[numFibers].context, start_routine);
-    cur_context = &fiberList[numFibers].context;
-    setcontext(cur_context);
+    cur_context = fiberList[numFibers].context;
+    setcontext(&cur_context);
 
     return 0;
 }
