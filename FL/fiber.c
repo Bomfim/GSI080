@@ -9,13 +9,13 @@
 #include <semaphore.h>
 #include "fiber.h"
 
-sigset_t set;              /* process wide signal mask */
-ucontext_t signal_context; /* the interrupt context */
-void *signal_stack;        /* global interrupt stack */
-fiber_t fiberList[MAX_FIBERS];
+sigset_t set;                        /* process wide signal mask */
+ucontext_t signal_context;           /* the interrupt context */
+void *signal_stack;                  /* global interrupt stack */
+fiber_t fiberList[MAX_FIBERS];       /* Queue of fibers*/
 ucontext_t cur_context, mainContext; /* a pointer to the current_context */
-
-static int numFibers = 0;
+static int numFibers = 0;            /* number of active fibers */
+int nextFiber;
 
 /* helper function to create a context.
 initialize the context from the current context, setup the new
@@ -52,15 +52,15 @@ void mkcontext(ucontext_t *uc, void *function)
 
 void scheduler() //signal handler for SIGPROF
 {
-    while (fiberList[numFibers].active == 1)
+    printf("Scheduler! - signal_context:%p\n", signal_context);
+    while (fiberList[numFibers + 1].active == 1)
     {
-        printf("Scheduler! - cur_context:%p\n", cur_context);
         if (numFibers == 7)
-            setcontext(&mainContext);
-        swapcontext(&cur_context, &fiberList[numFibers].context);
-        // fiberList[i].active = 0;
-        numFibers--;
+            break;
+
+        setcontext(&fiberList[numFibers + 1].context);
     }
+    setcontext(&mainContext);
 }
 
 /*
@@ -125,12 +125,11 @@ void initialize()
     it.it_value = it.it_interval;
     if (setitimer(ITIMER_REAL, &it, NULL))
         perror("setitimer");
-
-    getcontext(&mainContext);
 }
 
 int fiber_create(fiber_t *fiber, void *(*start_routine)(void *), void *arg)
 {
+    fiberList[numFibers] = *fiber;
 
     if (numFibers == MAX_FIBERS)
         return -1;
@@ -140,16 +139,21 @@ int fiber_create(fiber_t *fiber, void *(*start_routine)(void *), void *arg)
 
     mkcontext(&fiberList[numFibers].context, start_routine);
     cur_context = fiberList[numFibers].context;
-    setcontext(&cur_context);
+    numFibers++;
+    nextFiber = numFibers + 1;
+    swapcontext(&mainContext, &cur_context);
 
     return 0;
 }
 
 int fiber_join(fiber_t fiber, void **retval)
 {
+    printf("Into Join\n");
     return 0;
 }
 
 void fiber_exit(void *retval)
 {
+    fiberList[numFibers + 1].active = 0;
+    printf("Into Exit\n");
 }

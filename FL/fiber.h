@@ -10,6 +10,7 @@
 
 typedef struct
 {
+	int fiberID;
 	ucontext_t context;
 	int active;
 } fiber_t;
