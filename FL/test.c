@@ -4,7 +4,7 @@
 
 void *function()
 {
-    for (;;)
+    for (int i = 0; i < 3; i++)
     {
         printf("AEHOOOOOOOOOOOO!\n");
         sleep(1);
@@ -36,6 +36,7 @@ void *squares()
     for (i = 0; i < 10; ++i)
     {
         printf("%d*%d = %d\n", i, i, i * i);
+        sleep(1);
     }
     fiber_exit(NULL);
 }
@@ -50,7 +51,6 @@ int main(void)
     fiber_join(fiber[0], NULL);
     fiber_join(fiber[1], NULL);
     fiber_join(fiber[2], NULL);
-
 
     return 0;
 }
