@@ -54,7 +54,11 @@ int isActiveFibers(int *index)
         if (fiberList[i].active == 1)
         {
             if (index != NULL)
+            {
+                if (*index == i)
+                    continue;
                 *index = i;
+            }
             return 1;
         }
     }
@@ -66,10 +70,9 @@ void scheduler() //signal handler for SIGPROF
     printf("Scheduler! - signal_context:%p\n", signal_context);
     while (isActiveFibers(&index))
     {
-        setcontext(&cur_context);
-        cur_context = fiberList[index].context;
+        setcontext(&fiberList[index].context);
+        // cur_context = fiberList[index].context;
     }
-    // setcontext(&main_context);
 }
 
 /*
@@ -89,8 +92,9 @@ void timer_interrupt(int j, siginfo_t *si, void *old_context)
     makecontext(&signal_context, scheduler, 0);
 
     /* save running thread, jump to scheduler */
-    if (&cur_context)
-        swapcontext(&cur_context, &signal_context);
+    // if (&cur_context)
+
+    swapcontext(&cur_context, &signal_context);
 }
 
 /* Set up SIGALRM signal handler */
@@ -134,6 +138,9 @@ void initialize()
     it.it_value = it.it_interval;
     if (setitimer(ITIMER_REAL, &it, NULL))
         perror("setitimer");
+    getcontext(&main_context);
+    fiberList[numFibers].context = main_context;
+    fiberList[numFibers].active = 1;
 }
 
 int fiber_create(fiber_t *fiber, void *(*start_routine)(void *), void *arg)
@@ -146,9 +153,9 @@ int fiber_create(fiber_t *fiber, void *(*start_routine)(void *), void *arg)
     if (numFibers == 0)
         initialize();
 
+    numFibers++;
     mkcontext(&fiberList[numFibers].context, start_routine);
     cur_context = fiberList[numFibers].context;
-    numFibers++;
     swapcontext(&main_context, &cur_context);
 
     return 0;
@@ -168,7 +175,7 @@ void fiber_exit(void *retval)
     fiberList[index].active = 0;
     numFibers--;
     printf("index:%d\nnumFilbers:%d\nInto Exit\n", index, numFibers);
-    if(isActiveFibers(NULL))
+    if (isActiveFibers(NULL))
         setcontext(&signal_context);
     else
         setcontext(&main_context);
