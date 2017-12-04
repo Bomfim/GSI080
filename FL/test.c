@@ -4,9 +4,10 @@
 
 void *function()
 {
-    for (int i = 0; i < 3; i++)
+    int i;
+    for (i = 0; i < 3; i++)
     {
-        printf("AEHOOOOOOOOOOOO!\n");
+        printf("AEHOOOOOOOOOOOO! %d\n", i);
         sleep(1);
     }
     fiber_exit(NULL);
@@ -47,7 +48,6 @@ int main(void)
     fiber_create(&fiber[0], function, NULL);
     fiber_create(&fiber[1], fibonacci, NULL);
     fiber_create(&fiber[2], squares, NULL);
-
     fiber_join(fiber[0], NULL);
     fiber_join(fiber[1], NULL);
     fiber_join(fiber[2], NULL);
