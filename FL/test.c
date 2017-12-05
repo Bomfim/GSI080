@@ -43,14 +43,23 @@ void *squares()
 }
 int main(void)
 {
-    fiber_t fiber[3];
+    fiber_t fiber[8];
 
     fiber_create(&fiber[0], function, NULL);
     fiber_create(&fiber[1], fibonacci, NULL);
     fiber_create(&fiber[2], squares, NULL);
+    // fiber_create(&fiber[3], function, NULL);
+    // fiber_create(&fiber[4], fibonacci, NULL);
+    // fiber_create(&fiber[5], squares, NULL);
+    // fiber_create(&fiber[6], function, NULL);
+    // fiber_create(&fiber[7], fibonacci, NULL);
     fiber_join(fiber[0], NULL);
     fiber_join(fiber[1], NULL);
     fiber_join(fiber[2], NULL);
-
+    // fiber_join(fiber[3], NULL);
+    // fiber_join(fiber[4], NULL);
+    // fiber_join(fiber[5], NULL);
+    // fiber_join(fiber[6], NULL);
+    // fiber_join(fiber[7], NULL);
     return 0;
 }

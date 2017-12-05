@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <poll.h>
 #include "fiber.h"
 
 sigset_t set;                                           /* process wide signal mask */
@@ -17,15 +16,15 @@ static int numFibers = 0;                               /* number of active fibe
 initialize the context from the current context, setup the new
 stack, signal mask, and tell it which function to call.
 */
-void mkcontext(ucontext_t *uc, void *function)
+int mkcontext(ucontext_t *uc, void *function)
 {
     void *stack;
     getcontext(uc);
     stack = malloc(FIBER_STACK);
     if (stack == NULL)
     {
-        perror("malloc");
-        exit(1);
+        perror("Não foi possível concluir a alocação");
+        return -1;
     }
 
     /* we need to initialize the ucontext structure, give it a stack,
@@ -36,18 +35,19 @@ void mkcontext(ucontext_t *uc, void *function)
     if (sigemptyset(&uc->uc_sigmask) < 0)
     {
         perror("sigemptyset");
-        exit(1);
+        return -2;
     }
 
     /* setup the function we're going to, and n-1 arguments. */
     makecontext(uc, function, 0);
     fiberList[numFibers].active = 1;
     // printf("\ncontext is %p\n\n", uc);
+    return 1;
 }
 
 void scheduler() //signal handler for SIGPROF
 {
-    fprintf(stderr, KBLU, "Scheduler!", RESET);
+    // printf("Scheduler!\n");
     int i = 0, j;
     if (cur_context != &fiberList[0].context)
     {
@@ -125,7 +125,7 @@ void setup_signals(void)
 void initialize()
 {
     struct itimerval it;
-    fprintf(stderr, "Process Id: %d\n", (int)getpid());
+    // fprintf(stderr, "Process Id: %d\n", (int)getpid());
     /* allocate the global signal/interrupt stack */
     signal_stack = malloc(FIBER_STACK);
     if (signal_stack == NULL)
@@ -162,8 +162,8 @@ int fiber_create(fiber_t *fiber, void *(*start_routine)(void *), void *arg)
 
     numFibers++;
     fiberList[numFibers] = *fiber;
-    mkcontext(&fiberList[numFibers].context, start_routine);
-    cur_context = &fiberList[numFibers].context;
+    if(mkcontext(&fiberList[numFibers].context, start_routine))
+        cur_context = &fiberList[numFibers].context;
     swapcontext(&fiberList[0].context, cur_context);
 
     return 1;
@@ -171,7 +171,7 @@ int fiber_create(fiber_t *fiber, void *(*start_routine)(void *), void *arg)
 
 int fiber_join(fiber_t fiber, void **retval)
 {
-    printf("%sInto Join\n", KRED);
+    // printf("Into Join\n");
     fiberList[0].active = 0;
     swapcontext(&fiberList[0].context, &signal_context);
     return 1;
@@ -180,7 +180,7 @@ int fiber_join(fiber_t fiber, void **retval)
 void fiber_exit(void *retval)
 {
     int i = 1;
-    printf("%sInto Exit\n", KGRN);
+    // printf("Into Exit\n");
     fiberList[0].active = 1;
     numFibers--;
     while (cur_context != &fiberList[i].context)
