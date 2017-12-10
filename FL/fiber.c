@@ -16,7 +16,7 @@ static int numFibers = 0;                               /* number of active fibe
 initialize the context from the current context, setup the new
 stack, signal mask, and tell it which function to call.
 */
-int mkcontext(ucontext_t *uc, void *function)
+int mkcontext(ucontext_t *uc, void *function, void *arg)
 {
     void *stack;
     getcontext(uc);
@@ -39,15 +39,15 @@ int mkcontext(ucontext_t *uc, void *function)
     }
 
     /* setup the function we're going to, and n-1 arguments. */
-    makecontext(uc, function, 0);
+    makecontext(uc, function, 1, arg);
     fiberList[numFibers].active = 1;
     // printf("\ncontext is %p\n\n", uc);
     return 1;
 }
 
-void scheduler() //signal handler for SIGPROF
+static void scheduler() //signal handler for SIGPROF
 {
-    // printf("Scheduler!\n");
+    printf("Scheduler!\n");
     int i = 0, j;
     if (cur_context != &fiberList[0].context)
     {
@@ -162,7 +162,7 @@ int fiber_create(fiber_t *fiber, void *(*start_routine)(void *), void *arg)
 
     numFibers++;
     fiberList[numFibers] = *fiber;
-    if(mkcontext(&fiberList[numFibers].context, start_routine))
+    if(mkcontext(&fiberList[numFibers].context, start_routine, arg))
         cur_context = &fiberList[numFibers].context;
     swapcontext(&fiberList[0].context, cur_context);
 
@@ -171,20 +171,22 @@ int fiber_create(fiber_t *fiber, void *(*start_routine)(void *), void *arg)
 
 int fiber_join(fiber_t fiber, void **retval)
 {
-    // printf("Into Join\n");
+    printf("Into Join\n");
     fiberList[0].active = 0;
-    swapcontext(&fiberList[0].context, &signal_context);
+    // swapcontext(&fiberList[0].context, &signal_context);
+    scheduler();
     return 1;
 }
 
 void fiber_exit(void *retval)
 {
     int i = 1;
-    // printf("Into Exit\n");
+    printf("Into Exit\n");
     fiberList[0].active = 1;
     numFibers--;
     while (cur_context != &fiberList[i].context)
         i++;
     fiberList[i].active = 0;
-    swapcontext(cur_context, &signal_context);
+    // swapcontext(cur_context, &signal_context);
+    scheduler();
 }
