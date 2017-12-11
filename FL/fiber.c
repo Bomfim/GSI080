@@ -47,7 +47,7 @@ int mkcontext(ucontext_t *uc, void *function, void *arg)
 
 static void scheduler() //signal handler for SIGPROF
 {
-    printf("Scheduler!\n");
+    // printf("Scheduler!\n");
     int i = 0, j;
     if (cur_context != &fiberList[0].context)
     {
@@ -171,7 +171,7 @@ int fiber_create(fiber_t *fiber, void *(*start_routine)(void *), void *arg)
 
 int fiber_join(fiber_t fiber, void **retval)
 {
-    printf("Into Join\n");
+    // printf("Into Join\n");
     fiberList[0].active = 0;
     // swapcontext(&fiberList[0].context, &signal_context);
     scheduler();
@@ -181,7 +181,7 @@ int fiber_join(fiber_t fiber, void **retval)
 void fiber_exit(void *retval)
 {
     int i = 1;
-    printf("Into Exit\n");
+    // printf("Into Exit\n");
     fiberList[0].active = 1;
     numFibers--;
     while (cur_context != &fiberList[i].context)

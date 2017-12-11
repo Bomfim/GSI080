@@ -58,7 +58,7 @@ dkms.conf
 
 # Custom
 .vscode/
-test
+test*
 libfiber/
 tutu/
 regsisotrabalhoiii/
