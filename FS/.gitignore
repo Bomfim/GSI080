@@ -1,0 +1,4 @@
+.vscode/
+fs
+test
+*.o
